@@ -75,6 +75,9 @@ cursor_vision/
 ---
 EXECUTION/BUILD NOTES:
 ---
+
+*JUST PERSONAL NOTES WHILE THINKING HOW TO STRUCTURE EVERYTHING*
+
 Option 1:
 - The easiest way to build an application like this in my head would be if you imagine you took a screenshot with your webcam, 
 this rectangle image will be what I am referring to when I say working area. So start with a small safe area, about the center 15% of the working area,
@@ -89,5 +92,8 @@ This is the effect I am trying to prevent by adding the safe area (where looking
 as well as swap to +-dx & +-dy to make movement look even more natural. 
 This way the quadrants are still big enough to allow for camera/screen view not being identical but allow for more natural movement.
 
+Option 2 for control:
+- Rely more on my TensorFlow regression model using the face/eye landmarks to estimate offset for gx/gy based on neutral view. Then add a curve so small offsets = slower speed and big offset = faster.
+- Maybe use a 9 point calibration coordinate system since this will be a more directional/speed based movement system.
 
 ---
