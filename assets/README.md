@@ -71,4 +71,23 @@ cursor_vision/
     assets/
     README.md
 - Just expected; definitely subject to change.
+
+---
+EXECUTION/BUILD NOTES:
+---
+Option 1:
+- The easiest way to build an application like this in my head would be if you imagine you took a screenshot with your webcam, 
+this rectangle image will be what I am referring to when I say working area. So start with a small safe area, about the center 15% of the working area,
+from there divide the remaining working area (not including the safe area obviously) into equal sections which extend all the way from each corner
+of the safe area to the corner the corresponding corners on the working area. We now have 5 distinct areas: left of safe area, right of safe area, above safe area.
+and below safe area. Then we just set the cursor to move anytime the calculated area the user is looking at, from our TensorFlow Agent, is in one of those quadrants.
+- With this set up we will negate a lot of errors that I could see stemming from the fact that the webcam is not in the center of the computer screen. Meaning if we
+try to achieve pinpoint accuracy expecting that if we look at a dot in the center of the screen it will look to the camera like we are looking directly into it is illogical.
+This is the effect I am trying to prevent by adding the safe area (where looking at that part of the image has no effect), and the more quadrant based movement.
+- Cons: Will only allow for one direction of travel by the cursor at a time, meaning either +-x or +-y but never both at the same time.
+- Potential Solution: More quadrants, instead of 4 areas for movement parallel to xy axis's, still keep those but split each quadrant 3 more times for a total of 16,
+as well as swap to +-dx & +-dy to make movement look even more natural. 
+This way the quadrants are still big enough to allow for camera/screen view not being identical but allow for more natural movement.
+
+
 ---
