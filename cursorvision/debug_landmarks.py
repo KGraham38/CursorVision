@@ -8,20 +8,20 @@ import cv2
 import mediapipe as mp
 
 window_name = "CursorVision - Face Landmarks - Test"
-model_path = Path(__file__).parent / "models" / "face_landmarker.task"
+model_path = Path(__file__).resolve().parent.parent / "models" / "face_landmarker.task"
 
 #Draw all landmarks as dots
 def draw_landmarks_bgr(frame_bgr, face_landmarks):
-    h,w,_ = frame_bgr.shape[:2]
+    h,w = frame_bgr.shape[:2]
     for landmark in face_landmarks:
         x = int(landmark.x * w)
         y = int(landmark.y * h)
         if 0 <= x < w and 0 <= y < h:
-            cv2.circle(frame_bgr, (x, y), 1, (255, 0, 0), -1)
+            cv2.circle(frame_bgr, (x, y), 1, (0, 255, 0), -1)
 
 def main():
     if not model_path.exists():
-        raise FileNotFoundError("Model not found at : " + str(model_path))
+        raise FileNotFoundError(f"Model file not found: {model_path}")
 
     #MediaPipe uses Tasks instead of "mp.solutions" like the older examples I had been looking at
     base_options = mp.tasks.BaseOptions
@@ -35,6 +35,7 @@ def main():
         num_faces = 1,
         min_face_detection_confidence = 0.5,
         min_face_presence_confidence = 0.5,
+        min_tracking_confidence= 0.5 ,
         output_face_blendshapes = False,
         output_facial_transformation_matrixes = False,)
 
@@ -55,5 +56,46 @@ def main():
             if not ok:
                 break
 
+            #Mirror so looking left/right is viewed as left/right i think it will be easier than using ML on backwards data and convert it to real intent at the end
+            #Start with clear input end with clear output
+            frame_bgr = cv2.flip(frame_bgr, 1)
+
             #BGR to RGB for MediaPipe
-            fran_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB0)
+            frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format = mp.ImageFormat.SRGB, data=frame_rgb)
+
+            #Timestamp
+            timestamp_ms = int((time.time() - start) * 1000)
+
+            result = landmarker.detect_for_video(mp_image, timestamp_ms)
+
+            #Draw landmarks if face found
+            if result.face_landmarks:
+                draw_landmarks_bgr(frame_bgr, result.face_landmarks[0])
+                cv2.putText(frame_bgr, "FACE: FOUND", (10,30), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0,255,0),2)
+            else:
+                cv2.putText(frame_bgr, "FACE: NOT FOUND", (10,30), cv2.FONT_HERSHEY_SIMPLEX,1.0, (0,0,255),2)
+
+            #FPS rate
+            now=time.time()
+            dt=(now-last_time)
+            if dt > 0:
+                fps = 0.9 * fps + .1 * (1.0/dt)
+
+            last_time = now
+            cv2.putText(frame_bgr, f"FPS: {fps:.1f}", (10,70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255),2)
+
+            cv2.putText(frame_bgr, f"Press 'ESC' to quit", (10,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255),2)
+
+            cv2.imshow(window_name, frame_bgr)
+
+            #ESC
+            key = cv2.waitKey(1)
+            if key == 27:
+                break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
