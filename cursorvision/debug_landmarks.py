@@ -7,7 +7,7 @@ from pathlib import Path
 import cv2
 import mediapipe as mp
 
-#
+
 window_name = "CursorVision - Face Landmarks - Test"
 model_path = Path(__file__).resolve().parent.parent / "models" / "face_landmarker.task"
 
