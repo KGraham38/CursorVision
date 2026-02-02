@@ -1,9 +1,9 @@
 #Kody Graham
 #1/26/2026
-#This file will be the foundation for my FaceMesh landmarks
+#This file will be for testing different foundations for my FaceMesh landmarks
+
 import time
 from pathlib import Path
-
 
 import cv2
 import mediapipe as mp
@@ -14,11 +14,11 @@ model_path = Path(__file__).resolve().parent.parent / "models" / "face_landmarke
 
 #Draw all landmarks as dots
 def draw_landmarks_bgr(frame_bgr, face_landmarks):
-    h,w = frame_bgr.shape[:2]
+    height,width = frame_bgr.shape[:2]
     for landmark in face_landmarks:
-        x = int(landmark.x * w)
-        y = int(landmark.y * h)
-        if 0 <= x < w and 0 <= y < h:
+        x = int(landmark.x * width)
+        y = int(landmark.y * height)
+        if 0 <= x < width and 0 <= y < height:
             cv2.circle(frame_bgr, (x, y), 1, (0, 255, 0), -1)
 
 def main():
