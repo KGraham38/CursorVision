@@ -112,7 +112,6 @@ class LookDirection:
         if not self.neutral_set:
             self.neutral_horizontal_pos = current_horizontal_pos
             self.neutral_vertical_pos = current_vertical_pos
-            self.neutral_set = True
 
         look_horizontal = current_horizontal_pos - self.neutral_horizontal_pos
         look_vertical = current_vertical_pos -self.neutral_vertical_pos
@@ -176,9 +175,10 @@ class LookDirection:
             cv2.line(frame,centered, (target_x, target_y),(0,0,255),2)
             cv2.line(frame,centered, cursor_dot,(255,255,255),1)
 
-        status = "Neutral Point Set" if self.neutral_set else "Neutral Point NOT Set"
-        cv2.putText(frame, f"Current Est Look Point: ({look_horizontal: .3f},{look_vertical:.3f}) [{status}]",
-                    (100,100), cv2.FONT_HERSHEY_DUPLEX, .5, (255,255,255), 1 )
+        if self.neutral_set:
+            status = "Neutral Point Set" if self.neutral_set else "Neutral Point NOT Set"
+            cv2.putText(frame, f"Current Est Look Point: ({look_horizontal: .3f},{look_vertical:.3f}) [{status}]",
+                    (100,60), cv2.FONT_HERSHEY_DUPLEX, .5, (255,255,255), 1 )
 
 
 
