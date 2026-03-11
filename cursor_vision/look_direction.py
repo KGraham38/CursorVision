@@ -1,8 +1,14 @@
+#Kody Graham
+#WIll contain the logic of cursor movement as the baseline pre my prediction model/true calibration logic
+
 import cv2
 import  numpy as np
 import math
 
+#AGAIN BASELINE LOOK LOGIC ONLY!!!
 class LookDirection:
+
+    #These numbers look random but they correspond to my landmark model points ID's for specified features
     left_iris = [468,469, 470, 471,472]
     right_iris = [473, 474, 475, 476,477]
 
@@ -178,7 +184,7 @@ class LookDirection:
         if self.neutral_set:
             status = "Neutral Point Set" if self.neutral_set else "Neutral Point NOT Set"
             cv2.putText(frame, f"Current Est Look Point: ({look_horizontal: .3f},{look_vertical:.3f}) [{status}]",
-                    (100,60), cv2.FONT_HERSHEY_DUPLEX, .5, (255,255,255), 1 )
+                    (80,60), cv2.FONT_HERSHEY_DUPLEX, .5, (255,255,255), 1 )
 
 
 
