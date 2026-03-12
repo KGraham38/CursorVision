@@ -1,9 +1,18 @@
+#Daniyar Alimkhanov
+
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout, QLabel, QProgressBar)
 from values_tracking import ValuesTracking
 
 class SystemStatusPanel(QWidget):
     def __init__(self):
         super().__init__()
+
+        self.setStyleSheet("""
+                QWidget {
+                    background-color: #1c2026;
+                    border-radius: 10px;
+                }
+                """)
 
         self.fps_label = QLabel('FPS: 0.0')
         self.eye_label = QLabel('Eye Detected: None')
