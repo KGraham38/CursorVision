@@ -100,6 +100,8 @@ class DemoMode:
         if self.frame_width is not None:
             self.spawn_targets()
 
+        self.score = 0
+
     #Reset both my current look position dot and my simulated cursor dot
     def reset_dots(self):
         self.look_direction.current_look_dot_x = None
@@ -186,14 +188,18 @@ class DemoMode:
 
         cv2.putText(frame, f"Score: {self.score}", (10,self.frame_height - 20), cv2.FONT_HERSHEY_SIMPLEX, .8, (255,255,255), 2)
 
-        cv2.putText(frame, f"Targets Left: {remaining_targets}", (180, self.frame_height-20), cv2.FONT_HERSHEY_SIMPLEX, .8, (255,255,255), 2)
+        cv2.putText(frame, f"Targets Left: {remaining_targets}", (220, self.frame_height-20), cv2.FONT_HERSHEY_SIMPLEX, .8, (255,255,255), 2)
 
         if remaining_targets == 0:
             cv2.putText(frame,"All Targets Broken! To Reset Press 'T'", (80,100),cv2.FONT_HERSHEY_SIMPLEX, .8, (0,0,255), 2)
 
         if hit_position is not None:
             cv2.circle(frame, hit_position, 12, (0,0,255), 2)
-            cv2.putText(frame,"Look at the Targets!", (hit_position[0] + 12, hit_position[1]-12), cv2.FONT_HERSHEY_SIMPLEX, .38, (0,0,255), 1)
+            if self.look_direction.neutral_set:
+                cv2.putText(frame,"Look at the Targets!", (hit_position[0] -65 , hit_position[1]-30), cv2.FONT_HERSHEY_SIMPLEX, .38, (0,0,255), 1)
+            else:
+                cv2.putText(frame,"Center the red dot under the white one!", (hit_position[0] -120 , hit_position[1]-38), cv2.FONT_HERSHEY_SIMPLEX, .38, (0,0,255), 1)
+
 
     #Just my simple listener for user keyboard input
     def keyboard_listener(self, key_pressed, frame_shape):
@@ -204,6 +210,7 @@ class DemoMode:
         elif key_pressed == ord('r'):
             self.reset_dots()
             self.look_direction.neutral_set = False
+            self.reset()
 
         #reset targets
         elif key_pressed == ord('t'):
