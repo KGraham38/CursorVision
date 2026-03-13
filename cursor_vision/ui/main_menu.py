@@ -73,5 +73,7 @@ class UI_MainMenu(QMainWindow):
         self.timer.start(100)
 
     def update_ui(self):
+
         self.system_status_panel.update_status()
         self.camera_view.update_status()
+

@@ -1,5 +1,6 @@
+#Daniyar Alimkhanov
+
 class ValuesTracking:
-    camera_detected = True
     tracking_active = False
     face_found = False
     eye_confidence = 0.0

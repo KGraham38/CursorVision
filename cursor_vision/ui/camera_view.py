@@ -10,7 +10,7 @@ import time
 import mediapipe as mp
 from pathlib import Path
 
-model_path = Path(__file__).resolve().parent.parent / "models" / "face_landmarker.task"
+model_path = Path(__file__).resolve().parent.parent.parent / "models" / "face_landmarker.task"
 if not model_path.exists():
     raise FileNotFoundError(f"Model file not found: {model_path}")
 
@@ -161,3 +161,15 @@ class CameraView(QFrame):
         self.status_label.setText("FACE: FOUND" if ValuesTracking.face_found
                                   else "FACE: NOT FOUND")
         self.fps_label.setText(f"FPS: {ValuesTracking.fps:.1f}")
+
+    def stop_camera(self):
+        self.timer.stop()
+        if self.cap is not None:
+            self.cap.release()
+            self.cap = None
+
+    def start_camera(self):
+        if self.cap is None:
+            self.cap = cv2.VideoCapture(0)
+        if not self.timer.isActive():
+            self.timer.start(30)
