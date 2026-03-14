@@ -3,6 +3,7 @@
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
 from values_tracking import ValuesTracking
 from demo_mode import DemoMode
+from ui.settings_menu import SettingsWindow
 
 class MenuButtonsPanel(QWidget):
     def __init__(self):
@@ -14,6 +15,7 @@ class MenuButtonsPanel(QWidget):
         self.calibrate_button = QPushButton('Calibration Mode')
         self.demo_button = QPushButton('Demo / Test Mode')
         self.settings_button = QPushButton('Settings')
+        self.settings_button.clicked.connect(self.settings_button_clicked)
 
         self.start_button.setMinimumHeight(60)
         self.start_button.clicked.connect(self.start_button_clicked)
@@ -40,4 +42,8 @@ class MenuButtonsPanel(QWidget):
         self.demo_mode = DemoMode()
         self.demo_mode.run()
         main_window.camera_view.start_camera()
+
+    def settings_button_clicked(self):
+        window = SettingsWindow(parent=self.window())
+        window.exec_()
 
