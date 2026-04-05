@@ -9,6 +9,7 @@ import time
 
 import mediapipe as mp
 from pathlib import Path
+from cursor_vision_session import CursorVisionSession
 
 model_path = Path(__file__).resolve().parent.parent.parent / "models" / "face_landmarker.task"
 if not model_path.exists():
@@ -71,6 +72,7 @@ class CameraView(QFrame):
         #CAMERA ADDITION
         self.cap = None
         self.landmarker = None
+        self.cursor_session = CursorVisionSession()
 
         #Time
         self.start = time.time()
@@ -120,10 +122,11 @@ class CameraView(QFrame):
         result = self.landmarker.detect_for_video(mp_image, timestamp_ms)
 
         if result.face_landmarks:
-            draw_landmarks_bgr(frame_bgr, result.face_landmarks[0])
             ValuesTracking.face_found = True
+            self.cursor_session.process_face_landmarks(frame_bgr, result.face_landmarks[0])
         else:
             ValuesTracking.face_found = False
+            self.cursor_session.handle_no_face()
 
         now = time.time()
         dt = now - self.last_time
@@ -152,6 +155,13 @@ class CameraView(QFrame):
         self.status_label.setText("FACE: FOUND" if ValuesTracking.face_found
                                   else "FACE: NOT FOUND")
         self.fps_label.setText(f"FPS: {ValuesTracking.fps:.1f}")
+
+    def set_tracking_active(self, active):
+        ValuesTracking.tracking_active = bool(active)
+        if active:
+            self.cursor_session.reset_tracking()
+        else:
+            self.cursor_session.cursor_controller.reset()
 
     def stop_camera(self):
         self.timer.stop()

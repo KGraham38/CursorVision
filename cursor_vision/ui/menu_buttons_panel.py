@@ -31,7 +31,10 @@ class MenuButtonsPanel(QWidget):
         self.setLayout(layout)
 
     def start_button_clicked(self):
-        ValuesTracking.tracking_active = not ValuesTracking.tracking_active
+        main_window = self.window()
+        new_state = not ValuesTracking.tracking_active
+        main_window.camera_view.set_tracking_active(new_state)
+
         if ValuesTracking.tracking_active:
             self.start_button.setText('Stop Cursor Control')
         else:
