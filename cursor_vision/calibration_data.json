@@ -4,35 +4,35 @@
         "screen_y": 72,
         "data_save": {
             "left_iris": [
-                233,
-                260
+                261,
+                270
             ],
             "right_iris": [
-                316,
-                257
+                339,
+                269
             ],
             "left_mid": [
-                238,
-                263
+                265,
+                272
             ],
             "right_mid": [
-                318,
-                259
+                340,
+                271
             ],
             "left_brow": [
-                227,
-                236
+                256,
+                245
             ],
             "right_brow": [
-                326,
-                233
+                349,
+                246
             ],
             "centered": [
-                278,
-                261
+                302,
+                271
             ],
-            "average_horizontal": -0.10282734853015826,
-            "average_vertical": 0.905982905982906
+            "average_horizontal": -0.07862064700547902,
+            "average_vertical": 0.922962962962963
         }
     },
     {
@@ -40,35 +40,35 @@
         "screen_y": 72,
         "data_save": {
             "left_iris": [
-                239,
-                258
+                258,
+                266
             ],
             "right_iris": [
-                322,
-                254
+                337,
+                265
             ],
             "left_mid": [
-                241,
-                261
+                261,
+                268
             ],
             "right_mid": [
-                320,
-                257
+                335,
+                267
             ],
             "left_brow": [
-                229,
-                235
+                251,
+                242
             ],
             "right_brow": [
-                328,
-                230
+                344,
+                240
             ],
             "centered": [
-                280,
-                259
+                298,
+                267
             ],
-            "average_horizontal": -0.00016989625906614278,
-            "average_vertical": 0.8867521367521367
+            "average_horizontal": -0.01518615976020853,
+            "average_vertical": 0.9245014245014245
         }
     },
     {
@@ -76,35 +76,35 @@
         "screen_y": 72,
         "data_save": {
             "left_iris": [
-                248,
-                257
+                262,
+                266
             ],
             "right_iris": [
-                331,
-                254
+                340,
+                264
             ],
             "left_mid": [
-                248,
-                260
+                263,
+                267
             ],
             "right_mid": [
-                326,
-                256
+                337,
+                266
             ],
             "left_brow": [
-                235,
-                234
+                253,
+                241
             ],
             "right_brow": [
-                335,
-                230
+                345,
+                240
             ],
             "centered": [
-                287,
-                258
+                300,
+                266
             ],
-            "average_horizontal": 0.07096661947545745,
-            "average_vertical": 0.9038461538461539
+            "average_horizontal": 0.03170756524619726,
+            "average_vertical": 0.9423076923076923
         }
     },
     {
@@ -112,35 +112,35 @@
         "screen_y": 240,
         "data_save": {
             "left_iris": [
-                246,
-                258
+                257,
+                267
             ],
             "right_iris": [
-                329,
-                255
+                335,
+                265
             ],
             "left_mid": [
-                251,
-                259
+                260,
+                268
             ],
             "right_mid": [
-                329,
-                256
+                335,
+                267
             ],
             "left_brow": [
-                239,
-                233
+                252,
+                241
             ],
             "right_brow": [
-                339,
-                230
+                345,
+                241
             ],
             "centered": [
-                290,
-                257
+                297,
+                267
             ],
-            "average_horizontal": -0.07142857142857142,
-            "average_vertical": 0.9615384615384616
+            "average_horizontal": -0.045433689961153705,
+            "average_vertical": 0.9430199430199431
         }
     },
     {
@@ -148,35 +148,35 @@
         "screen_y": 240,
         "data_save": {
             "left_iris": [
-                250,
-                258
+                262,
+                267
             ],
             "right_iris": [
-                334,
-                256
+                340,
+                266
             ],
             "left_mid": [
-                253,
-                260
+                264,
+                268
             ],
             "right_mid": [
-                332,
-                257
+                339,
+                268
             ],
             "left_brow": [
-                242,
-                233
+                254,
+                240
             ],
             "right_brow": [
-                342,
-                230
+                348,
+                241
             ],
             "centered": [
-                292,
-                258
+                301,
+                268
             ],
-            "average_horizontal": -0.013496131881407684,
-            "average_vertical": 0.9444444444444444
+            "average_horizontal": -0.014664126640769135,
+            "average_vertical": 0.9451058201058201
         }
     },
     {
@@ -184,34 +184,34 @@
         "screen_y": 240,
         "data_save": {
             "left_iris": [
-                256,
-                258
+                264,
+                266
             ],
             "right_iris": [
-                340,
-                256
+                343,
+                266
             ],
             "left_mid": [
-                257,
-                259
+                265,
+                267
             ],
             "right_mid": [
-                335,
-                257
+                339,
+                267
             ],
             "left_brow": [
-                245,
-                233
+                255,
+                240
             ],
             "right_brow": [
-                345,
-                230
+                349,
+                241
             ],
             "centered": [
-                296,
-                258
+                302,
+                267
             ],
-            "average_horizontal": 0.05703235122370269,
+            "average_horizontal": 0.04546149728567604,
             "average_vertical": 0.9622507122507122
         }
     },
@@ -220,35 +220,35 @@
         "screen_y": 408,
         "data_save": {
             "left_iris": [
-                249,
-                260
+                260,
+                267
             ],
             "right_iris": [
-                332,
-                257
+                338,
+                266
             ],
             "left_mid": [
-                253,
-                261
+                264,
+                267
             ],
             "right_mid": [
-                332,
-                258
+                338,
+                267
             ],
             "left_brow": [
-                243,
-                234
+                254,
+                239
             ],
             "right_brow": [
-                343,
-                231
+                348,
+                241
             ],
             "centered": [
-                292,
-                259
+                301,
+                267
             ],
-            "average_horizontal": -0.05711954779775398,
-            "average_vertical": 0.9629629629629629
+            "average_horizontal": -0.062469504755442426,
+            "average_vertical": 0.9807692307692308
         }
     },
     {
@@ -256,35 +256,35 @@
         "screen_y": 408,
         "data_save": {
             "left_iris": [
-                254,
-                259
+                262,
+                268
             ],
             "right_iris": [
-                338,
-                257
+                340,
+                267
             ],
             "left_mid": [
-                257,
-                261
+                264,
+                268
             ],
             "right_mid": [
-                335,
-                258
+                339,
+                268
             ],
             "left_brow": [
-                245,
-                233
+                254,
+                240
             ],
             "right_brow": [
-                346,
-                229
+                349,
+                241
             ],
             "centered": [
-                296,
-                259
+                301,
+                268
             ],
-            "average_horizontal": 5.231794443077281e-05,
-            "average_vertical": 0.9470443349753694
+            "average_horizontal": -0.014671750451908529,
+            "average_vertical": 0.9814814814814814
         }
     },
     {
@@ -292,35 +292,35 @@
         "screen_y": 408,
         "data_save": {
             "left_iris": [
-                258,
-                255
+                265,
+                268
             ],
             "right_iris": [
-                340,
-                253
+                343,
+                268
             ],
             "left_mid": [
-                260,
-                256
+                266,
+                269
             ],
             "right_mid": [
-                336,
-                253
+                341,
+                269
             ],
             "left_brow": [
-                248,
-                229
+                256,
+                240
             ],
             "right_brow": [
-                347,
-                225
+                351,
+                242
             ],
             "centered": [
-                298,
-                254
+                303,
+                269
             ],
-            "average_horizontal": 0.031179201679645534,
-            "average_vertical": 0.9814814814814814
+            "average_horizontal": 0.016098484848484848,
+            "average_vertical": 0.9642401021711366
         }
     }
 ]

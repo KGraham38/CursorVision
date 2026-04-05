@@ -9,6 +9,7 @@ import time
 import mediapipe as mp
 import mesh_map
 from look_direction import LookDirection
+from face_features import build_feature_dict
 
 class Calibration:
 
@@ -28,15 +29,22 @@ class Calibration:
         self.cur_point_index = 0
         self.point_radius = 18
 
+        self.samples_per_point = 25
+        self.capture_active = False
+        self.capture_buffer = []
+
         self.state = "menu"
 
 
 
     #Start calibration
     def startCalibration(self):
-        self.state = "running"
+        self.state = "neutral"
         self.cur_point_index = 0
         self.saved_calibration_data = []
+        self.capture_active = False
+        self.capture_buffer = []
+        self.look_direction.clear_neutral_eye_center()
 
         if not self.calibration_positions:
             self.createCalibrationPoints()
@@ -48,7 +56,8 @@ class Calibration:
         title = "CursorVision - Calibration Mode"
         line1 = "Press 'ENTER' to start calibration"
         line2 = "Press 'ESC' to quit at any time"
-        line3 = "During calibration: 'SPACE' to save point, 'R' to reset"
+        line3 = "During Calibration: 'ENTER' will capture a burst"
+        line4 = f"of {self.samples_per_point} calibration values for each point"
 
         cv2.putText(frame,title, (self.frame_width//2 -260,60), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
 
@@ -58,7 +67,10 @@ class Calibration:
 
         cv2.putText(frame, line2, (self.frame_width//2 -203,180), cv2.FONT_HERSHEY_SIMPLEX, .8, (255,255,255), 1)
 
-        cv2.putText(frame, line3, (self.frame_width//2 -298,240), cv2.FONT_HERSHEY_SIMPLEX, .7, (0,0,255), 1)
+        cv2.putText(frame, line3, (self.frame_width//2 -300,240), cv2.FONT_HERSHEY_SIMPLEX, .8, (0,0,255), 1)
+
+        cv2.putText(frame, line4, (self.frame_width//2 -250,280), cv2.FONT_HERSHEY_SIMPLEX, .8, (0,0,255), 1)
+
 
         return frame
 
