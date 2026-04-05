@@ -69,13 +69,23 @@ class CameraView(QFrame):
         self.setLayout(layout)
 
         #CAMERA ADDITION
-        self.cap = cv2.VideoCapture(0)
-        if not self.cap.isOpened():
-            raise Exception("Could not open camera")
+        self.cap = None
+        self.landmarker = None
 
+        #Time
+        self.start = time.time()
+        self.last_time = self.start
+        self.fps = 0.0
 
+        #self.prev_time = time.time()
 
-        # MediaPipe uses Tasks instead of "mp.solutions" like the older examples I had been looking at
+        # TIMER (same as in debug_landmarks)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.start_camera()
+        self.timer.start(30)
+
+    def create_landmarker(self):
         base_options = mp.tasks.BaseOptions
         face_landmarker = mp.tasks.vision.FaceLandmarker
         face_landmarker_options = mp.tasks.vision.FaceLandmarkerOptions
@@ -89,64 +99,45 @@ class CameraView(QFrame):
             min_face_presence_confidence=0.5,
             min_tracking_confidence=0.5,
             output_face_blendshapes=False,
-            output_facial_transformation_matrixes=False, )
+            output_facial_transformation_matrixes=False,
+        )
 
-        self.landmarker = face_landmarker.create_from_options(options)
-
-        #Time
-        self.start = time.time()
-        self.last_time = self.start
-        self.fps = 0.0
-
-        #self.prev_time = time.time()
-
-        # TIMER (same as in debug_landmarks)
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_frame)
-        self.timer.start(30)
+        return face_landmarker.create_from_options(options)
 
     def update_frame(self):
+        if self.cap is None or self.landmarker is None:
+            return
 
         ok, frame_bgr = self.cap.read()
         if not ok:
             return
 
-        # Flip for mirror view
         frame_bgr = cv2.flip(frame_bgr, 1)
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
 
         timestamp_ms = int((time.time() - self.start) * 1000)
-
         result = self.landmarker.detect_for_video(mp_image, timestamp_ms)
 
-        # Draw landmarks if face found
         if result.face_landmarks:
             draw_landmarks_bgr(frame_bgr, result.face_landmarks[0])
             ValuesTracking.face_found = True
         else:
             ValuesTracking.face_found = False
 
-        # FPS rate
         now = time.time()
-        dt = (now - self.last_time)
+        dt = now - self.last_time
         if dt > 0:
-            self.fps = 0.9 * self.fps + .1 * (1.0 / dt)
+            self.fps = 0.9 * self.fps + 0.1 * (1.0 / dt)
 
         self.last_time = now
         ValuesTracking.fps = self.fps
 
-        #removed so it won't be shown on the camera
-        #cv2.putText(frame_bgr, f"FPS: {self.fps:.1f}", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-
-        # Convert frame to Qt format
         frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-
         h, w, ch = frame_rgb.shape
         bytes_per_line = ch * w
 
         qt_image = QImage(frame_rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
-
         pixmap = QPixmap.fromImage(qt_image)
 
         self.camera_placeholder.setPixmap(
@@ -167,9 +158,21 @@ class CameraView(QFrame):
         if self.cap is not None:
             self.cap.release()
             self.cap = None
+        if self.landmarker is not None:
+            self.landmarker.close()
+            self.landmarker = None
 
     def start_camera(self):
         if self.cap is None:
             self.cap = cv2.VideoCapture(0)
+            if not self.cap.isOpened():
+                raise Exception("Could not open camera")
+
+        if self.landmarker is None:
+            self.landmarker = self.create_landmarker()
+
+        self.start = time.time()
+        self.last_time = self.start
+
         if not self.timer.isActive():
             self.timer.start(30)

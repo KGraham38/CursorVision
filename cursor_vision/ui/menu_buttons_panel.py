@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QPushButton
 from values_tracking import ValuesTracking
 from demo_mode import DemoMode
 from ui.settings_menu import SettingsWindow
+from calibration import Calibration
 
 class MenuButtonsPanel(QWidget):
     def __init__(self):
@@ -19,6 +20,7 @@ class MenuButtonsPanel(QWidget):
 
         self.start_button.setMinimumHeight(60)
         self.start_button.clicked.connect(self.start_button_clicked)
+        self.calibrate_button.clicked.connect(self.calibrate_button_clicked)
         self.demo_button.clicked.connect(self.demo_button_clicked)
         layout.addWidget(self.start_button)
         layout.addWidget(self.calibrate_button)
@@ -34,6 +36,16 @@ class MenuButtonsPanel(QWidget):
             self.start_button.setText('Stop Cursor Control')
         else:
             self.start_button.setText('Start Cursor Control')
+
+
+    def calibrate_button_clicked(self):
+        main_window = self.window()
+        main_window.camera_view.stop_camera()
+        try:
+            self.calibration_mode = Calibration()
+            self.calibration_mode.run()
+        finally:
+            main_window.camera_view.start_camera()
 
     def demo_button_clicked(self):
 
