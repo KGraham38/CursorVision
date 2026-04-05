@@ -13,6 +13,11 @@ class CursorController:
         self.is_windows = platform.system().lower().startswith('win')
         self.user32 = ctypes.windll.user32 if self.is_windows else None
 
+    def left_click(self):
+        if self.is_windows:
+            self.user32.mouse_event(0x0002,0,0,0,0)
+            self.user32.mouse_event(0x0004,0,0,0,0)
+
     def reset(self):
         self.last_screen_x = None
         self.last_screen_y = None
@@ -55,7 +60,7 @@ class CursorController:
             smoothed_x = int(self.last_screen_x + (target_x - self.last_screen_x) * self.smoothing)
             smoothed_y = int(self.last_screen_y + (target_y - self.last_screen_y) * self.smoothing)
 
-        if self.last_screen_x is None or self.last_screen_y is None:
+        if self.last_screen_x is not None or self.last_screen_y is not None:
             delta_x = abs(smoothed_x - self.last_screen_x)
             delta_y = abs(smoothed_y - self.last_screen_y)
 

@@ -36,7 +36,7 @@ class MenuButtonsPanel(QWidget):
         main_window.camera_view.set_tracking_active(new_state)
 
         if ValuesTracking.tracking_active:
-            self.start_button.setText('Stop Cursor Control')
+            self.start_button.setText('Stop Cursor Control or Press SPACEBAR ')
         else:
             self.start_button.setText('Start Cursor Control')
 
