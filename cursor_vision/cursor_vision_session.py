@@ -24,6 +24,18 @@ class CursorVisionSession:
         self.blink_active = False
         self.blink_start_time = 0.0
         self.last_click_time = 0.0
+        self.recent_blink_times=[]
+        self.triple_blink_timelimit = 1.8
+
+    def handle_runtime_stop(self, key):
+        if key == 27:
+            self.disable_cursor_control()
+
+    def disable_cursor_control(self):
+        ValuesTracking.tracking_active = False
+        self.cursor_controller.reset()
+        self.blink_active = False
+        self.recent_blink_times = []
 
     def point_px(self,face_landmarks, index, frame_width, frame_height):
         point = face_landmarks[index]
@@ -64,6 +76,13 @@ class CursorVisionSession:
             blink_duration = now - self.blink_start_time
 
             if self.min_blink_duration <= blink_duration <= self.max_blink_duration:
+                self.recent_blink_times = [blink_time for blink_time in self.recent_blink_times if now-blink_time <= self.triple_blink_timelimit]
+                self.recent_blink_times.append(now)
+
+                if len(self.recent_blink_times) >= 3:
+                    self.disable_cursor_control()
+                    return
+
                 if now - self.last_click_time >= self.blink_cooldown:
                     self.cursor_controller.left_click()
                     self.last_click_time = now
@@ -82,11 +101,13 @@ class CursorVisionSession:
         self.blink_active = False
         self.blink_start_time = 0.0
         self.last_click_time = 0.0
+        self.recent_blink_times = []
 
     def handle_no_face(self):
         ValuesTracking.gaze_vector = (0.0, 0.0)
         ValuesTracking.eye_confidence = 0.0
         self.blink_active = False
+        self.recent_blink_times = []
 
     def process_face_landmarks(self, frame_bgr, face_landmarks):
         frame_height, frame_width = frame_bgr.shape[:2]

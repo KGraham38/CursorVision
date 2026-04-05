@@ -5,6 +5,7 @@ from values_tracking import ValuesTracking
 from demo_mode import DemoMode
 from ui.settings_menu import SettingsWindow
 from calibration import Calibration
+from PyQt5.QtCore import QTimer
 
 class MenuButtonsPanel(QWidget):
     def __init__(self):
@@ -30,13 +31,24 @@ class MenuButtonsPanel(QWidget):
 
         self.setLayout(layout)
 
+        self.button_timer = QTimer(self)
+        self.button_timer.timeout.connect(self.update_start_button_label)
+        self.button_timer.start(100)
+
     def start_button_clicked(self):
         main_window = self.window()
         new_state = not ValuesTracking.tracking_active
         main_window.camera_view.set_tracking_active(new_state)
 
         if ValuesTracking.tracking_active:
-            self.start_button.setText('Stop Cursor Control or Press SPACEBAR ')
+            self.start_button.setText('Click to Stop Cursor Control or Blink 3x Quickly ')
+        else:
+            self.start_button.setText('Start Cursor Control')
+
+    def update_start_button_label(self):
+
+        if ValuesTracking.tracking_active:
+            self.start_button.setText('Click to Stop Cursor Control or Blink 3x Quickly ')
         else:
             self.start_button.setText('Start Cursor Control')
 
