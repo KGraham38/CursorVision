@@ -184,7 +184,7 @@ class LookDirection:
         if self.neutral_set:
             status = "Neutral Point Set" if self.neutral_set else "Neutral Point NOT Set"
             cv2.putText(frame, f"Current Est Look Point: ({look_horizontal: .3f},{look_vertical:.3f}) [{status}]",
-                    (80,60), cv2.FONT_HERSHEY_DUPLEX, .5, (255,255,255), 1 )
+                    (10,69), cv2.FONT_HERSHEY_DUPLEX, .4, (255,255,255), 1 )
 
 
 

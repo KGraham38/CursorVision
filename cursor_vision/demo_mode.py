@@ -177,11 +177,13 @@ class DemoMode:
     def draw_ui(self,frame, face_found, hit_position):
         remaining_targets = sum(not target["broke"] for target in self.targets)
 
+        cv2.putText(frame, "CursorVision - Demo Mode", (100, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
         if face_found:
-            cv2.putText(frame, "FACE: FOUND",(10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+            cv2.putText(frame, "FACE: FOUND",(470,69), cv2.FONT_HERSHEY_SIMPLEX, .8, (0,255,0), 2)
 
         else:
-            cv2.putText(frame, "FACE: NOT FOUND",(10,30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+            cv2.putText(frame, "FACE: NOT FOUND",(410,69), cv2.FONT_HERSHEY_SIMPLEX, .8, (0,0,255), 2)
 
         if not self.look_direction.neutral_set:
             cv2.putText(frame, "Press 'C' to Calibrate", (10,69), cv2.FONT_HERSHEY_SIMPLEX, .8, (255,0,0), 2)
