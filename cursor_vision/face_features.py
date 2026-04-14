@@ -20,12 +20,12 @@ def build_feature_dict(look_direction, face_landmarks, frame_shape):
     if look_direction.neutral_horizontal_pos is None:
         look_horizontal = 0.0
     else:
-        look_horizontal = current_horizontal_position - float(look_direction.neutral_horizontal_position)
+        look_horizontal = current_horizontal_position - float(look_direction.neutral_horizontal_pos)
 
-    if look_direction.neutral_vertical_position is None:
+    if look_direction.neutral_vertical_pos is None:
         look_vertical = 0.0
     else:
-        look_vertical = current_vertical_position - float(look_direction.neutral_vertical_position)
+        look_vertical = current_vertical_position - float(look_direction.neutral_vertical_pos)
 
     if abs(look_horizontal) < look_direction.deadzone:
         look_horizontal = 0.0
@@ -54,10 +54,10 @@ def build_feature_dict(look_direction, face_landmarks, frame_shape):
     right_mid_x = int(data["right_mid"][0])
     right_mid_y = int(data["right_mid"][1])
 
-    left_brown_x = int(data["left_brown"][0])
-    left_brown_y = int(data["left_brown"][1])
-    right_brown_x = int(data["right_brown"][0])
-    right_brown_y = int(data["right_brown"][1])
+    left_brow_x = int(data["left_brow"][0])
+    left_brow_y = int(data["left_brow"][1])
+    right_brow_x = int(data["right_brow"][0])
+    right_brow_y = int(data["right_brow"][1])
 
     return {
         "average_horizontal": current_horizontal_position,
@@ -88,12 +88,12 @@ def build_feature_dict(look_direction, face_landmarks, frame_shape):
         "right_mid_y": right_mid_y,
         "right_mid_x_norm": norm_x(right_mid_x, frame_width),
         "right_mid_y_norm": norm_y(right_mid_y, frame_height),
-        "left_brown_x": left_brown_x,
-        "left_brown_y": left_brown_y,
-        "left_brown_x_norm": norm_x(left_brown_x, frame_width),
-        "left_brown_y_norm": norm_y(left_brown_y, frame_height),
-        "right_brown_x": right_brown_x,
-        "right_brown_y": right_brown_y,
-        "right_brown_x_norm": norm_x(right_brown_x, frame_width),
-        "right_brown_y_norm": norm_y(right_brown_y, frame_height),
+        "left_brow_x": left_brow_x,
+        "left_brow_y": left_brow_y,
+        "left_brow_x_norm": norm_x(left_brow_x, frame_width),
+        "left_brow_y_norm": norm_y(left_brow_y, frame_height),
+        "right_brow_x": right_brow_x,
+        "right_brow_y": right_brow_y,
+        "right_brow_x_norm": norm_x(right_brow_x, frame_width),
+        "right_brow_y_norm": norm_y(right_brow_y, frame_height),
     }

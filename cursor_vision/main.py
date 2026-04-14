@@ -1,4 +1,5 @@
 import sys
+import mediapipe as mp
 from PyQt5.QtWidgets import QApplication
 from ui.main_menu import UI_MainMenu
 
