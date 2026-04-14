@@ -28,3 +28,40 @@ class Preprocess:
     chin = 152
 
     def __init__(self):
+        self.feature_buffer = 0
+
+    def reset(self) -> None:
+        self.feature_buffer.clear()
+
+    def get_feat_names(self):
+        return list(self.features)
+
+    def extract_feat_dict(self, landmarks) -> Dict[str,float]:
+        return None
+
+    def extract_feat_vector(self, landmarks) -> float:
+
+    def build_labeled_sample(self, landmarks):
+        return None
+    def build_labeled_samples(self, landmarks):
+        return None
+
+    def eye_feats(self,landmarks):
+        return None
+
+    #Just get point x and y
+    def point(self,landmarks, index:int):
+        landmark = landmarks[index]
+        return float(landmark.x), float(landmark.y)
+
+    def avg(self, landmarks):
+
+    #Just going to be the xs added and then /2, same for y
+    def middle(self, point1: Tuple[float,float], point2: Tuple[float,float]) -> Tuple[float,float]:
+        return (point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2
+
+
+    #Just take the two points and subtract x and y to find distance between them
+    def distance(self, point1: Tuple[float,float], point2: Tuple[float,float]) -> float:
+        return float(np.hypot(point1[0] - point2[0], point1[1] - point2[1]))
+
