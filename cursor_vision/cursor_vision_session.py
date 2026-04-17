@@ -1,19 +1,30 @@
 #Will handle the logic to tie the face landmarks, gaze estimation, and OS cursor movement
 
+from pathlib import Path
+import time
+from math import hypot
+
+import mesh_map
 from values_tracking import ValuesTracking
 from look_direction import LookDirection
 from cursor_controller import CursorController
-import mesh_map
-import time
-from math import hypot
+from face_features import build_feature_dict
+from tensorflow_model import load_trained_model, predict_target_norm
 
 
 class CursorVisionSession:
     def __init__(self):
         self.look_direction = LookDirection()
         self.automatic_recalibration = True
-        self.cursor_controller = CursorController(smoothing= .5, min_move =2)
+        self.cursor_controller = CursorController(smoothing=.5, min_move=2)
 
+        self.gaze_model_path = Path(__file__).resolve().parent.parent / "models" / "gaze_smoother.keras"
+        self.tf_model = load_trained_model(self.gaze_model_path)
+        self.tf_enabled = True
+        self.tf_blend = 0.03
+
+        self.raw_gain_x = 4
+        self.raw_gain_y = 3.5
 
         #Blink to click
         self.blink_threshold = .2
@@ -24,9 +35,34 @@ class CursorVisionSession:
         self.blink_active = False
         self.blink_start_time = 0.0
         self.last_click_time = 0.0
-        self.recent_blink_times=[]
+        self.recent_blink_times = []
         self.triple_blink_timelimit = 1.8
 
+        self.right_wink_threshold = .23
+        self.eye_open_threshold = .23
+        self.right_wink_active = False
+        self.right_wink_start_time = 0.0
+
+    def amplify_raw_point(self, raw_point, frame_shape):
+        if raw_point is None:
+            return None
+
+        frame_height, frame_width = frame_shape[:2]
+        center_x = frame_width // 2
+        center_y = frame_height // 2
+
+        raw_x, raw_y = raw_point
+
+        delta_x = raw_x - center_x
+        delta_y = raw_y - center_y
+
+        amplified_x = int(center_x + delta_x * self.raw_gain_x)
+        amplified_y = int(center_y + delta_y * self.raw_gain_y)
+
+        amplified_x = max(0, min(frame_width - 1, amplified_x))
+        amplified_y = max(0, min(frame_height - 1, amplified_y))
+
+        return amplified_x, amplified_y
     def handle_runtime_stop(self, key):
         if key == 27:
             self.disable_cursor_control()
@@ -36,15 +72,16 @@ class CursorVisionSession:
         self.cursor_controller.reset()
         self.blink_active = False
         self.recent_blink_times = []
+        self.right_wink_active = False
 
-    def point_px(self,face_landmarks, index, frame_width, frame_height):
+    def point_px(self, face_landmarks, index, frame_width, frame_height):
         point = face_landmarks[index]
         return point.x * frame_width, point.y * frame_height
 
     def distance(self, point1, point2):
         return hypot(point1[0] - point2[0], point1[1] - point2[1])
 
-    def eye_open_ratio(self, face_landmarks, upper_idx,lower_idx, outer_idx, inner_idx, frame_width, frame_height):
+    def eye_open_ratio(self, face_landmarks, upper_idx, lower_idx, outer_idx, inner_idx, frame_width, frame_height):
         upper = self.point_px(face_landmarks, upper_idx, frame_width, frame_height)
         lower = self.point_px(face_landmarks, lower_idx, frame_width, frame_height)
         outer = self.point_px(face_landmarks, outer_idx, frame_width, frame_height)
@@ -58,13 +95,33 @@ class CursorVisionSession:
 
         return lid_distance / eye_width
 
-    def handle_blink_click(self,face_landmarks, frame_width, frame_height):
-        left_ratio = self.eye_open_ratio(face_landmarks, 159,145,33,133,frame_width, frame_height)
-        right_ratio = self.eye_open_ratio(face_landmarks, 386,374,263,362,frame_width, frame_height)
+    def handle_blink_click(self, face_landmarks, frame_width, frame_height):
+        left_ratio = self.eye_open_ratio(face_landmarks, 159, 145, 33, 133, frame_width, frame_height)
+        right_ratio = self.eye_open_ratio(face_landmarks, 386, 374, 263, 362, frame_width, frame_height)
 
+        now = time.time()
+
+        #Right wink = right click
+        right_wink = right_ratio < self.right_wink_threshold and left_ratio > self.eye_open_threshold
+
+        if right_wink and not self.right_wink_active:
+            self.right_wink_active = True
+            self.right_wink_start_time = now
+            return
+
+        if not right_wink and self.right_wink_active:
+            self.right_wink_active = False
+            wink_duration = now - self.right_wink_start_time
+
+            if self.min_blink_duration <= wink_duration <= self.max_blink_duration:
+                if now - self.last_click_time >= self.blink_cooldown:
+                    self.cursor_controller.right_click()
+                    self.last_click_time = now
+                    return
+
+        #Normal blink = left click
         average_ratio = (left_ratio + right_ratio) / 2
         eyes_closed = average_ratio < self.blink_threshold
-        now = time.time()
 
         if eyes_closed and not self.blink_active:
             self.blink_active = True
@@ -76,7 +133,10 @@ class CursorVisionSession:
             blink_duration = now - self.blink_start_time
 
             if self.min_blink_duration <= blink_duration <= self.max_blink_duration:
-                self.recent_blink_times = [blink_time for blink_time in self.recent_blink_times if now-blink_time <= self.triple_blink_timelimit]
+                self.recent_blink_times = [
+                    blink_time for blink_time in self.recent_blink_times
+                    if now - blink_time <= self.triple_blink_timelimit
+                ]
                 self.recent_blink_times.append(now)
 
                 if len(self.recent_blink_times) >= 3:
@@ -96,7 +156,8 @@ class CursorVisionSession:
         self.cursor_controller.reset()
         ValuesTracking.gaze_vector = (0.0, 0.0)
         ValuesTracking.eye_confidence = 0.0
-
+        self.right_wink_active = False
+        self.right_wink_start_time = 0.0
 
         self.blink_active = False
         self.blink_start_time = 0.0
@@ -108,6 +169,20 @@ class CursorVisionSession:
         ValuesTracking.eye_confidence = 0.0
         self.blink_active = False
         self.recent_blink_times = []
+        self.right_wink_active = False
+
+    def blend_points(self, raw_point, tf_point):
+        if raw_point is None:
+            return tf_point
+        if tf_point is None:
+            return raw_point
+
+        raw_x, raw_y = raw_point
+        tf_x, tf_y = tf_point
+
+        final_x = int(raw_x + (tf_x - raw_x) * self.tf_blend)
+        final_y = int(raw_y + (tf_y - raw_y) * self.tf_blend)
+        return final_x, final_y
 
     def process_face_landmarks(self, frame_bgr, face_landmarks):
         frame_height, frame_width = frame_bgr.shape[:2]
@@ -134,6 +209,25 @@ class CursorVisionSession:
         self.look_direction.draw(frame_bgr, face_landmarks)
 
         if ValuesTracking.tracking_active:
-            cursor_point = self.look_direction.get_current_cursor_position()
-            self.cursor_controller.move_to_frame_point(cursor_point, frame_bgr.shape)
+            raw_cursor_point = self.look_direction.get_current_cursor_position()
+            raw_cursor_point = self.amplify_raw_point(raw_cursor_point, frame_bgr.shape)
+            final_cursor_point = raw_cursor_point
+
+            if self.tf_enabled and self.tf_model is not None:
+                feature_dict = build_feature_dict(self.look_direction, face_landmarks, frame_bgr.shape)
+                tf_prediction = predict_target_norm(self.tf_model, feature_dict)
+
+                if tf_prediction is not None:
+                    pred_x_norm, pred_y_norm = tf_prediction
+
+                    tf_frame_x = int(pred_x_norm * max(frame_width - 1, 1))
+                    tf_frame_y = int(pred_y_norm * max(frame_height - 1, 1))
+
+                    tf_frame_x = max(0, min(frame_width - 1, tf_frame_x))
+                    tf_frame_y = max(0, min(frame_height - 1, tf_frame_y))
+
+                    tf_cursor_point = (tf_frame_x, tf_frame_y)
+                    final_cursor_point = self.blend_points(raw_cursor_point, tf_cursor_point)
+
+            self.cursor_controller.move_to_frame_point(final_cursor_point, frame_bgr.shape)
             self.handle_blink_click(face_landmarks, frame_width, frame_height)

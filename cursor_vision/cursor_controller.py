@@ -18,6 +18,11 @@ class CursorController:
             self.user32.mouse_event(0x0002,0,0,0,0)
             self.user32.mouse_event(0x0004,0,0,0,0)
 
+    def right_click(self):
+        if self.is_windows:
+            self.user32.mouse_event(0x0008, 0, 0, 0, 0)
+            self.user32.mouse_event(0x0010, 0, 0, 0, 0)
+
     def reset(self):
         self.last_screen_x = None
         self.last_screen_y = None

@@ -28,24 +28,34 @@ class Preprocess:
     chin = 152
 
     def __init__(self):
+        #set up buffer to smooth and hold feature data
         self.feature_buffer = 0
 
+    #Clear old feature data
     def reset(self) -> None:
         self.feature_buffer.clear()
 
+    #Must return in the same order that my model will expect
     def get_feat_names(self):
         return list(self.features)
 
+    #Build dict of all extracted face and eye feats
     def extract_feat_dict(self, landmarks) -> Dict[str,float]:
         return None
 
+    #Combine the extracted feat values into one vector
     def extract_feat_vector(self, landmarks) -> float:
+         return None
 
+    #Build one labeled training sample
     def build_labeled_sample(self, landmarks):
         return None
+
+    #Build a bunch of labeled training samples from the landmark data
     def build_labeled_samples(self, landmarks):
         return None
 
+    #Calc measurement for one eye, will need to include iris pos and eye aspect ratio
     def eye_feats(self,landmarks):
         return None
 
@@ -54,7 +64,9 @@ class Preprocess:
         landmark = landmarks[index]
         return float(landmark.x), float(landmark.y)
 
-    def avg(self, landmarks):
+    def avg(self, landmarks, numLandmarks: int) -> Tuple[float,float]:
+        return float(np.mean([self.point(landmarks, i) for i in range(numLandmarks)]))
+
 
     #Just going to be the xs added and then /2, same for y
     def middle(self, point1: Tuple[float,float], point2: Tuple[float,float]) -> Tuple[float,float]:

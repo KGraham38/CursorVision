@@ -1,7 +1,6 @@
 #Kody Graham
 #WIll contain the logic for the calibration UI and datapoints
 
-import math
 import cv2
 from pathlib import Path
 import json
@@ -10,6 +9,7 @@ import mediapipe as mp
 import mesh_map
 from look_direction import LookDirection
 from face_features import build_feature_dict
+from tensorflow_model import train_and_save_model
 
 class Calibration:
 
@@ -23,6 +23,7 @@ class Calibration:
 
         self.window_name = "CursorVision - Calibration Mode"
         self.model_path = Path(__file__).resolve().parent.parent / "models" / "face_landmarker.task"
+        self.gaze_model_path = Path(__file__).resolve().parent.parent / "models" / "gaze_smoother.keras"
 
         self.frame_width = None
         self.frame_height = None
@@ -180,7 +181,7 @@ class Calibration:
         self.capture_active = True
         self.capture_buffer = []
 
-    def appendBurstData(self,feature_dict):
+    def appendBurstData(self, feature_dict):
         if not self.capture_active or feature_dict is None:
             return
 
@@ -190,16 +191,24 @@ class Calibration:
 
         target_x, target_y = self.calibration_positions[self.cur_point_index]
 
+        screen_x_norm = float(target_x) / max(float(self.frame_width - 1), 1.0)
+        screen_y_norm = float(target_y) / max(float(self.frame_height - 1), 1.0)
+
         data = {
-            "point_index" : int(self.cur_point_index),
+            "point_index": int(self.cur_point_index),
             "screen_x": int(target_x),
             "screen_y": int(target_y),
             "frame_width": int(self.frame_width),
             "frame_height": int(self.frame_height),
-            "screem_x_norm": float(target_x)/ max(float(self.frame_width - 1), 1),
-            "screem_y_norm": float(target_y)/ max(float(self.frame_height - 1), 1),
-            "features": feature_dict
+            "screen_x_norm": screen_x_norm,
+            "screen_y_norm": screen_y_norm,
+            "screem_x_norm": screen_x_norm,
+            "screem_y_norm": screen_y_norm,
+            "target_x_norm": screen_x_norm,
+            "target_y_norm": screen_y_norm,
+            "features": {key: float(value) for key, value in feature_dict.items()},
         }
+
         self.capture_buffer.append(data)
 
         if len(self.capture_buffer) >= self.samples_per_point:
@@ -211,26 +220,33 @@ class Calibration:
             if self.cur_point_index >= len(self.calibration_positions):
                 self.state = "done"
 
-
-    def saveCalibrationPoints(self, frame, file_name = "calibration_data.json"):
+    def saveCalibrationPoints(self, frame, file_name="calibration_data.json"):
         file_path = Path(__file__).resolve().parent / file_name
 
-        payload= {
-            "format_version": 2,
+        payload = {
+            "format_version": 3,
             "values_per_point": self.samples_per_point,
             "screen_width": self.frame_width,
             "screen_height": self.frame_height,
             "neutral_horizontal": self.look_direction.neutral_horizontal_pos,
             "neutral_vertical": self.look_direction.neutral_vertical_pos,
+            "tf_model_file": str(self.gaze_model_path),
             "data_values": self.saved_calibration_data,
         }
 
-        with open(file_path, "w", encoding= "utf-8") as file:
+        with open(file_path, "w", encoding="utf-8") as file:
             json.dump(payload, file, indent=4)
 
+        trained_model = train_and_save_model(self.saved_calibration_data, self.gaze_model_path)
+
         print(f"Calibration data saved to {file_path}")
-        label_temp = "Saved Sample Values Successfully"
-        cv2.putText(frame, label_temp, (50, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+
+        if trained_model is not None:
+            label_temp = "Saved calibration + trained TF model"
+        else:
+            label_temp = "Saved calibration data"
+
+        cv2.putText(frame, label_temp, (30, 400), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
         cv2.imshow(self.window_name, frame)
         cv2.waitKey(1500)
