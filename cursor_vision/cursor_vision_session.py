@@ -20,28 +20,30 @@ class CursorVisionSession:
 
         self.gaze_model_path = Path(__file__).resolve().parent.parent / "models" / "gaze_smoother.keras"
         self.tf_model = load_trained_model(self.gaze_model_path)
-        self.tf_enabled = True
-        self.tf_blend = 0.03
+        self.tf_enabled = False
+        self.tf_blend = 0.35
 
-        self.raw_gain_x = 4
-        self.raw_gain_y = 3.5
+        self.raw_gain_x = 2
+        self.raw_gain_y = 1.25
 
-        #Blink to click
-        self.blink_threshold = .2
+        #Blink settings
         self.min_blink_duration = .1
         self.max_blink_duration = .5
         self.blink_cooldown = .6
 
-        self.blink_active = False
-        self.blink_start_time = 0.0
-        self.last_click_time = 0.0
-        self.recent_blink_times = []
-        self.triple_blink_timelimit = 1.8
-
+        self.left_wink_threshold = .23
         self.right_wink_threshold = .23
         self.eye_open_threshold = .23
+
+        self.left_wink_active = False
+        self.left_wink_start_time = 0.0
         self.right_wink_active = False
         self.right_wink_start_time = 0.0
+        self.last_click_time = 0.0
+
+        self.recent_left_wink_times = []
+        self.recent_right_wink_times = []
+        self.triple_blink_timelimit = 1.8
 
     def amplify_raw_point(self, raw_point, frame_shape):
         if raw_point is None:
@@ -70,9 +72,14 @@ class CursorVisionSession:
     def disable_cursor_control(self):
         ValuesTracking.tracking_active = False
         self.cursor_controller.reset()
-        self.blink_active = False
-        self.recent_blink_times = []
+
+        self.left_wink_active = False
+        self.left_wink_start_time = 0.0
         self.right_wink_active = False
+        self.right_wink_start_time = 0.0
+
+        self.recent_left_wink_times = []
+        self.recent_right_wink_times = []
 
     def point_px(self, face_landmarks, index, frame_width, frame_height):
         point = face_landmarks[index]
@@ -101,9 +108,54 @@ class CursorVisionSession:
 
         now = time.time()
 
-        #Right wink = right click
-        right_wink = right_ratio < self.right_wink_threshold and left_ratio > self.eye_open_threshold
+        left_wink = (
+                left_ratio < self.left_wink_threshold and
+                right_ratio > self.eye_open_threshold
+        )
 
+        right_wink = (
+                right_ratio < self.right_wink_threshold and
+                left_ratio > self.eye_open_threshold
+        )
+
+        both_closed = (
+                left_ratio < self.left_wink_threshold and
+                right_ratio < self.right_wink_threshold
+        )
+
+        # Ignore both eyes closed
+        if both_closed:
+            self.left_wink_active = False
+            self.right_wink_active = False
+            return
+
+        #LEFT EYE -> LEFT CLICK /TRIPLE LEFT WINK DISABLE
+        if left_wink and not self.left_wink_active:
+            self.left_wink_active = True
+            self.left_wink_start_time = now
+            return
+
+        if not left_wink and self.left_wink_active:
+            self.left_wink_active = False
+            wink_duration = now - self.left_wink_start_time
+
+            if self.min_blink_duration <= wink_duration <= self.max_blink_duration:
+                self.recent_left_wink_times = [
+                    blink_time for blink_time in self.recent_left_wink_times
+                    if now - blink_time <= self.triple_blink_timelimit
+                ]
+                self.recent_left_wink_times.append(now)
+
+                if len(self.recent_left_wink_times) >= 3:
+                    self.disable_cursor_control()
+                    return
+
+                if now - self.last_click_time >= self.blink_cooldown:
+                    self.cursor_controller.left_click()
+                    self.last_click_time = now
+                    return
+
+        #RIGHT EYE -> RIGHT CLICK / TRIPLE RIGHT WINK DISABLE
         if right_wink and not self.right_wink_active:
             self.right_wink_active = True
             self.right_wink_start_time = now
@@ -114,38 +166,20 @@ class CursorVisionSession:
             wink_duration = now - self.right_wink_start_time
 
             if self.min_blink_duration <= wink_duration <= self.max_blink_duration:
-                if now - self.last_click_time >= self.blink_cooldown:
-                    self.cursor_controller.right_click()
-                    self.last_click_time = now
-                    return
-
-        #Normal blink = left click
-        average_ratio = (left_ratio + right_ratio) / 2
-        eyes_closed = average_ratio < self.blink_threshold
-
-        if eyes_closed and not self.blink_active:
-            self.blink_active = True
-            self.blink_start_time = now
-            return
-
-        if not eyes_closed and self.blink_active:
-            self.blink_active = False
-            blink_duration = now - self.blink_start_time
-
-            if self.min_blink_duration <= blink_duration <= self.max_blink_duration:
-                self.recent_blink_times = [
-                    blink_time for blink_time in self.recent_blink_times
+                self.recent_right_wink_times = [
+                    blink_time for blink_time in self.recent_right_wink_times
                     if now - blink_time <= self.triple_blink_timelimit
                 ]
-                self.recent_blink_times.append(now)
+                self.recent_right_wink_times.append(now)
 
-                if len(self.recent_blink_times) >= 3:
+                if len(self.recent_right_wink_times) >= 3:
                     self.disable_cursor_control()
                     return
 
                 if now - self.last_click_time >= self.blink_cooldown:
-                    self.cursor_controller.left_click()
+                    self.cursor_controller.right_click()
                     self.last_click_time = now
+                    return
 
     def reset_tracking(self):
         self.look_direction.clear_neutral_eye_center()
@@ -156,20 +190,24 @@ class CursorVisionSession:
         self.cursor_controller.reset()
         ValuesTracking.gaze_vector = (0.0, 0.0)
         ValuesTracking.eye_confidence = 0.0
+
+        self.left_wink_active = False
+        self.left_wink_start_time = 0.0
         self.right_wink_active = False
         self.right_wink_start_time = 0.0
-
-        self.blink_active = False
-        self.blink_start_time = 0.0
         self.last_click_time = 0.0
-        self.recent_blink_times = []
+
+        self.recent_left_wink_times = []
+        self.recent_right_wink_times = []
 
     def handle_no_face(self):
         ValuesTracking.gaze_vector = (0.0, 0.0)
         ValuesTracking.eye_confidence = 0.0
-        self.blink_active = False
-        self.recent_blink_times = []
+
+        self.left_wink_active = False
         self.right_wink_active = False
+        self.recent_left_wink_times = []
+        self.recent_right_wink_times = []
 
     def blend_points(self, raw_point, tf_point):
         if raw_point is None:
