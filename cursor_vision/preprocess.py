@@ -1,81 +1,99 @@
-#Will prepare the eye feature vectors for the tensor flow model
-#No longer used but keeping for easy reference to the landmark key values
-#Logic for feeding tensorflow_model.py now going to come from face_features.py
+#Going to use this class for better feature extraction for both the calibration and the tensorflow training, basically just going to try to make preprocess.py more straight forward
 
-class Preprocess:
+def norm_x(x_value, frame_width):
+    if frame_width <= 1:
+        return 0.0
+    return float(x_value) / float(frame_width-1)
 
-    features = [
-        "left_iris_x_ratio", "right_iris_x_ratio", "avg_iris_x_ratio",
-        "left_iris_y_ratio", "right_iris_y_ratio", "avg_iris_y_ratio",
-        "left_eye_aspect", "right_eye_aspect", "avg_eye_aspect",
-        "head_horiz_offset_ratio","head_vert_offset_ratio", "face_aspect_ratio"]
+def norm_y(y_value, frame_height):
+    if frame_height <= 1:
+        return 0.0
+    return float(y_value) / float(frame_height-1)
 
-    left_eye = {
-        "iris": [468, 469, 470, 471, 472],
-        "outer": 33, "inner": 133,
-        "upper": 159, "lower": 145,
-        "brow": [70, 63, 105, 66, 107],}
+def build_feature_dict(look_direction, face_landmarks, frame_shape):
+    frame_height, frame_width = frame_shape[:2]
+    data = look_direction.landmark_features(face_landmarks,frame_width,frame_height)
 
-    right_eye = {
-        "iris": [473, 474, 475, 476, 477],
-        "outer": 263, "inner": 362,
-        "upper": 386, "lower": 374,
-        "brow": [336, 296, 334, 293, 300]}
+    current_horizontal_position = float(data["average_horizontal"])
+    current_vertical_position = float(data["average_vertical"])
 
-    #To hopefully help correct for head position, may need a few additional points, we shall see
-    tip_nose = 1
-    face_left = 234
-    face_right = 454
-    forehead = 10
-    chin = 152
+    if look_direction.neutral_horizontal_pos is None:
+        look_horizontal = 0.0
+    else:
+        look_horizontal = current_horizontal_position - float(look_direction.neutral_horizontal_pos)
 
-    def __init__(self):
-        #set up buffer to smooth and hold feature data
-        self.feature_buffer = 0
+    if look_direction.neutral_vertical_pos is None:
+        look_vertical = 0.0
+    else:
+        look_vertical = current_vertical_position - float(look_direction.neutral_vertical_pos)
 
-    #Clear old feature data
-    def reset(self) -> None:
-        self.feature_buffer.clear()
+    if abs(look_horizontal) < look_direction.deadzone:
+        look_horizontal = 0.0
+    if abs(look_vertical) < look_direction.deadzone:
+        look_vertical = 0.0
 
-    #Must return in the same order that my model will expect
-    def get_feat_names(self):
-        return list(self.features)
+    boost_h = look_horizontal * (1 + 2.2 * abs(look_horizontal))
+    boost_v = look_vertical * (1 + 2.2 * abs(look_vertical))
 
-    #Build dict of all extracted face and eye feats
-    def extract_feat_dict(self, landmarks) -> Dict[str,float]:
-        return None
+    centered_x = int(data["centered"][0])
+    centered_y = int(data["centered"][1])
 
-    #Combine the extracted feat values into one vector
-    def extract_feat_vector(self, landmarks) -> float:
-         return None
+    raw_target_x = int(centered_x +boost_h * look_direction.horizontal_multiplier)
+    raw_target_y = int(centered_y + boost_v * look_direction.vertical_multiplier)
 
-    #Build one labeled training sample
-    def build_labeled_sample(self, landmarks):
-        return None
+    raw_target_x = max(0, min(frame_width-1, raw_target_x))
+    raw_target_y = max(0, min(frame_height-1, raw_target_y))
 
-    #Build a bunch of labeled training samples from the landmark data
-    def build_labeled_samples(self, landmarks):
-        return None
+    left_iris_x = int(data["left_iris"][0])
+    left_iris_y = int(data["left_iris"][1])
+    right_iris_x = int(data["right_iris"][0])
+    right_iris_y = int(data["right_iris"][1])
 
-    #Calc measurement for one eye, will need to include iris pos and eye aspect ratio
-    def eye_feats(self,landmarks):
-        return None
+    left_mid_x = int(data["left_mid"][0])
+    left_mid_y = int(data["left_mid"][1])
+    right_mid_x = int(data["right_mid"][0])
+    right_mid_y = int(data["right_mid"][1])
 
-    #Just get point x and y
-    def point(self,landmarks, index:int):
-        landmark = landmarks[index]
-        return float(landmark.x), float(landmark.y)
+    left_brow_x = int(data["left_brow"][0])
+    left_brow_y = int(data["left_brow"][1])
+    right_brow_x = int(data["right_brow"][0])
+    right_brow_y = int(data["right_brow"][1])
 
-    def avg(self, landmarks, numLandmarks: int) -> Tuple[float,float]:
-        return float(np.mean([self.point(landmarks, i) for i in range(numLandmarks)]))
-
-
-    #Just going to be the xs added and then /2, same for y
-    def middle(self, point1: Tuple[float,float], point2: Tuple[float,float]) -> Tuple[float,float]:
-        return (point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2
-
-
-    #Just take the two points and subtract x and y to find distance between them
-    def distance(self, point1: Tuple[float,float], point2: Tuple[float,float]) -> float:
-        return float(np.hypot(point1[0] - point2[0], point1[1] - point2[1]))
-
+    return {
+        "average_horizontal": current_horizontal_position,
+        "average_vertical": current_vertical_position,
+        "look_horizontal": float(look_horizontal),
+        "look_vertical": float(look_vertical),
+        "centered_x": centered_x,
+        "centered_y": centered_y,
+        "centered_x_norm": norm_x(centered_x, frame_width),
+        "centered_y_norm": norm_y(centered_y, frame_height),
+        "raw_target_x": raw_target_x,
+        "raw_target_y": raw_target_y,
+        "raw_target_x_norm": norm_x(raw_target_x, frame_width),
+        "raw_target_y_norm": norm_y(raw_target_y, frame_height),
+        "left_iris_x": left_iris_x,
+        "left_iris_y": left_iris_y,
+        "left_iris_x_norm": norm_x(left_iris_x, frame_width),
+        "left_iris_y_norm": norm_y(left_iris_y, frame_height),
+        "right_iris_x": right_iris_x,
+        "right_iris_y": right_iris_y,
+        "right_iris_x_norm": norm_x(right_iris_x, frame_width),
+        "right_iris_y_norm": norm_y(right_iris_y, frame_height),
+        "left_mid_x": left_mid_x,
+        "left_mid_y": left_mid_y,
+        "left_mid_x_norm": norm_x(left_mid_x, frame_width),
+        "left_mid_y_norm": norm_y(left_mid_y, frame_height),
+        "right_mid_x": right_mid_x,
+        "right_mid_y": right_mid_y,
+        "right_mid_x_norm": norm_x(right_mid_x, frame_width),
+        "right_mid_y_norm": norm_y(right_mid_y, frame_height),
+        "left_brow_x": left_brow_x,
+        "left_brow_y": left_brow_y,
+        "left_brow_x_norm": norm_x(left_brow_x, frame_width),
+        "left_brow_y_norm": norm_y(left_brow_y, frame_height),
+        "right_brow_x": right_brow_x,
+        "right_brow_y": right_brow_y,
+        "right_brow_x_norm": norm_x(right_brow_x, frame_width),
+        "right_brow_y_norm": norm_y(right_brow_y, frame_height),
+    }

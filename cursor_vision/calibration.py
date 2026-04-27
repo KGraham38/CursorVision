@@ -8,7 +8,7 @@ import time
 import mediapipe as mp
 import mesh_map
 from look_direction import LookDirection
-from face_features import build_feature_dict
+from preprocess import build_feature_dict
 from tensorflow_model import train_and_save_model
 
 class Calibration:

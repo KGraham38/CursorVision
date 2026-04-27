@@ -8,7 +8,7 @@ import mesh_map
 from values_tracking import ValuesTracking
 from look_direction import LookDirection
 from cursor_controller import CursorController
-from face_features import build_feature_dict
+from preprocess import build_feature_dict
 from tensorflow_model import load_trained_model, predict_target_norm
 
 
