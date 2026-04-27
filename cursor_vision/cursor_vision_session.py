@@ -23,6 +23,17 @@ class CursorVisionSession:
         self.tf_enabled = False
         self.tf_blend = 0.35
 
+        #Simple TensorFlow confidence gate.
+        #Because the model predicts only xy coordinates confidence is just estimated
+        #by comparing the TensorFlow point to the raw landmark based point.
+        self.tf_confidence_threshold = 0.35
+        self.tf_max_distance_ratio = 0.35
+
+        #Only run TensorFlow prediction every 4 frames to reduce lag
+        self.tf_frame_interval = 4
+        self.tf_frame_counter = 0
+        self.last_tf_cursor_point = None
+
         self.raw_gain_x = 2
         self.raw_gain_y = 1.25
 
@@ -123,7 +134,7 @@ class CursorVisionSession:
                 right_ratio < self.right_wink_threshold
         )
 
-        # Ignore both eyes closed
+        #Ignore both eyes closed
         if both_closed:
             self.left_wink_active = False
             self.right_wink_active = False
@@ -222,6 +233,34 @@ class CursorVisionSession:
         final_y = int(raw_y + (tf_y - raw_y) * self.tf_blend)
         return final_x, final_y
 
+    def tf_prediction_confidence(self, raw_point, tf_point, frame_shape):
+        if raw_point is None or tf_point is None:
+            return 0.0
+
+        frame_height, frame_width = frame_shape[:2]
+        frame_diagonal = hypot(frame_width, frame_height)
+
+        if frame_diagonal <= 0:
+            return 0.0
+
+        raw_x, raw_y = raw_point
+        tf_x, tf_y = tf_point
+
+        prediction_distance = hypot(tf_x - raw_x, tf_y - raw_y)
+        max_allowed_distance = frame_diagonal * self.tf_max_distance_ratio
+
+        if max_allowed_distance <= 0:
+            return 0.0
+
+        confidence = 1.0 - (prediction_distance / max_allowed_distance)
+        confidence = max(0.0, min(1.0, confidence))
+
+        return confidence
+
+    def should_use_tf_prediction(self, raw_point, tf_point, frame_shape):
+        confidence = self.tf_prediction_confidence(raw_point, tf_point, frame_shape)
+        return confidence >= self.tf_confidence_threshold
+
     def process_face_landmarks(self, frame_bgr, face_landmarks):
         frame_height, frame_width = frame_bgr.shape[:2]
 
@@ -255,17 +294,34 @@ class CursorVisionSession:
                 feature_dict = build_feature_dict(self.look_direction, face_landmarks, frame_bgr.shape)
                 tf_prediction = predict_target_norm(self.tf_model, feature_dict)
 
-                if tf_prediction is not None:
-                    pred_x_norm, pred_y_norm = tf_prediction
+                if self.tf_enabled and self.tf_model is not None:
+                    feature_dict = build_feature_dict(self.look_direction, face_landmarks, frame_bgr.shape)
+                    tf_prediction = predict_target_norm(self.tf_model, feature_dict)
 
-                    tf_frame_x = int(pred_x_norm * max(frame_width - 1, 1))
-                    tf_frame_y = int(pred_y_norm * max(frame_height - 1, 1))
+                    if self.tf_enabled and self.tf_model is not None:
+                        self.tf_frame_counter += 1
 
-                    tf_frame_x = max(0, min(frame_width - 1, tf_frame_x))
-                    tf_frame_y = max(0, min(frame_height - 1, tf_frame_y))
+                        if self.tf_frame_counter >= self.tf_frame_interval:
+                            self.tf_frame_counter = 0
 
-                    tf_cursor_point = (tf_frame_x, tf_frame_y)
-                    final_cursor_point = self.blend_points(raw_cursor_point, tf_cursor_point)
+                            feature_dict = build_feature_dict(self.look_direction, face_landmarks, frame_bgr.shape)
+                            tf_prediction = predict_target_norm(self.tf_model, feature_dict)
+
+                            if tf_prediction is not None:
+                                pred_x_norm, pred_y_norm = tf_prediction
+
+                                tf_frame_x = int(pred_x_norm * max(frame_width - 1, 1))
+                                tf_frame_y = int(pred_y_norm * max(frame_height - 1, 1))
+
+                                tf_frame_x = max(0, min(frame_width - 1, tf_frame_x))
+                                tf_frame_y = max(0, min(frame_height - 1, tf_frame_y))
+
+                                self.last_tf_cursor_point = (tf_frame_x, tf_frame_y)
+
+                        if self.last_tf_cursor_point is not None:
+                            if self.should_use_tf_prediction(raw_cursor_point, self.last_tf_cursor_point,
+                                                             frame_bgr.shape):
+                                final_cursor_point = self.blend_points(raw_cursor_point, self.last_tf_cursor_point)
 
             self.cursor_controller.move_to_frame_point(final_cursor_point, frame_bgr.shape)
             self.handle_blink_click(face_landmarks, frame_width, frame_height)

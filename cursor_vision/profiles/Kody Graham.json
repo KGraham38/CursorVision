@@ -1,0 +1,14 @@
+{
+  "sensitivity": 50,
+  "smoothing": 40,
+  "deadzone": 10,
+  "blink_sensitivity": 38,
+  "confidence_threshold": 70,
+  "click_cooldown_ms": 100,
+  "left_wink_enabled": true,
+  "right_wink_enabled": true,
+  "safe_mode_enabled": true,
+  "auto_pause_on_no_face": true,
+  "auto_resume": true,
+  "auto_suggest_recal": true
+}

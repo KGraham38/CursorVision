@@ -1,4 +1,6 @@
 #Will prepare the eye feature vectors for the tensor flow model
+#No longer used but keeping for easy reference to the landmark key values
+#Logic for feeding tensorflow_model.py now going to come from face_features.py
 
 class Preprocess:
 

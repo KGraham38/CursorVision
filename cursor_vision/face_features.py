@@ -1,4 +1,4 @@
-#Going to use this class for better feature extraction for both the calibration and the tensorflow training
+#Going to use this class for better feature extraction for both the calibration and the tensorflow training, basically just going to try to make preprocess.py more straight forward
 
 def norm_x(x_value, frame_width):
     if frame_width <= 1:

@@ -7,7 +7,7 @@ try:
 except Exception:
     tf = None
 
-
+#Ordered list of the features that I want to be used by my tensorflow model
 FEATURE_NAMES = [
     "average_horizontal",
     "average_vertical",
@@ -31,7 +31,7 @@ FEATURE_NAMES = [
     "right_brow_y_norm",
 ]
 
-
+#Just to make sure all of my training data is safe
 def _safe_float(value, default=0.0):
     try:
         return float(value)
@@ -58,7 +58,7 @@ def _target_y_norm(sample):
         return _safe_float(sample["screem_y_norm"])
     return 0.0
 
-
+#Convert my saved calibration samples into Numpy arrays x = featVal, y = normalized desired screen coord
 def build_training_arrays(samples):
     x_rows = []
     y_rows = []
@@ -78,10 +78,10 @@ def build_training_arrays(samples):
     y_array = np.asarray(y_rows, dtype=np.float32)
     return x_array, y_array
 
-
+#Build my regression model to predict xy gaze pos
 def build_model(input_size):
     normalizer = tf.keras.layers.Normalization(axis=-1)
-
+    #Build small neural net to predict norm screen coords
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(input_size,)),
         normalizer,
@@ -90,7 +90,10 @@ def build_model(input_size):
         tf.keras.layers.Dense(2, activation="sigmoid"),
     ])
 
+
     model.compile(
+        #Adjust weight while training, played around with the learning rate a lot, of .01,.001, and .0001,
+        #.001 seemed like the best value for not overshooting but also not taking 10 minutes to train
         optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
         loss="mse",
         metrics=["mae"],
@@ -98,6 +101,7 @@ def build_model(input_size):
     return model, normalizer
 
 
+#Train on my calibration data/samples
 def train_and_save_model(samples, model_path):
     if tf is None:
         print("TensorFlow is not installed. Skipping training.")
@@ -138,7 +142,7 @@ def train_and_save_model(samples, model_path):
     print(f"Gaze model saved to {model_path}")
     return model
 
-
+#Load cal data from my JSON and train from it
 def train_from_calibration_json(json_path, model_path=None):
     json_path = Path(json_path)
     with open(json_path, "r", encoding="utf-8") as file:
@@ -151,10 +155,10 @@ def train_from_calibration_json(json_path, model_path=None):
 
     return train_and_save_model(samples, model_path)
 
-
+#If available load my old model
 def load_trained_model(model_path):
     if tf is None:
-        print("TensorFlow is not installed. Live TF assist disabled.")
+        print("TensorFlow is not installed. Live tensorflow assist disabled.")
         return None
 
     model_path = Path(model_path)
@@ -164,13 +168,13 @@ def load_trained_model(model_path):
 
     try:
         model = tf.keras.models.load_model(str(model_path), compile=False)
-        print(f"[TF] Loaded model from {model_path}")
+        print(f"Loaded model from {model_path}")
         return model
-    except Exception as exc:
-        print(f"[TF] Failed to load model: {exc}")
+    except Exception as e:
+        print(f"Failed to load model: {e}")
         return None
 
-
+#Predict the norm screen coords from the current feat dict
 def predict_target_norm(model, feature_dict):
     if model is None:
         return None
@@ -184,6 +188,6 @@ def predict_target_norm(model, feature_dict):
         pred_x = float(np.clip(prediction[0], 0.0, 1.0))
         pred_y = float(np.clip(prediction[1], 0.0, 1.0))
         return pred_x, pred_y
-    except Exception as exc:
-        print(f"[TF] Prediction failed: {exc}")
+    except Exception as e:
+        print(f"Prediction failed: {e}")
         return None
